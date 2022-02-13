@@ -1,54 +1,55 @@
 // SPDX-License-Identifier: MIT
+// Website: https://circumstancer.com
 
-//            `.-----.`              ..----.`                 `.----.`             .----.`            
-//        `-+osssssssssso/.      ./ossssssssso/.           ./osssssssso/.       -+sssooosso/-         
-//      `/sss+:.`   ``.:+ss/    /so/-.`   `.:oss:        .+ss/-`    `-/os-    `+ss/.`   `./ss+`       
-//     `oss/`            `.`     .           .sss       .sso.           `     +ss-         .sso`      
-//    `oss:                                  `sss`     `oso`                 .ss+           +ss/      
-//    :sso                                   /ss:      :ss:    `...`         .sso           +sss`     
-//    oss:                           ....--/os+.       +ss. -/ossssss+-`      +ss/         :soss.     
-//    oss-                          -ssssssss+-`       oss-+o/.````-/sso-     `/sso:.```.:oo-+ss.     
-//    +ss:                               ``.:+ss/      osso+`        .oss.      ./ossssso+:` oss`     
-//    :sso                                    /ss/     /sss.          -ss/          ````    `sso      
-//    `oss/                                   .sso     .sss.          -ss/                  /ss-      
-//     `oss+`            `-`    ``            /ss/      :ss+         `oss.    ``          `/ss/       
-//       :oss+:-`````.-:+ss/   `sso/-.`   `.-+ss+`       :oso:.   `.:oso-     oso:.`   `./oso-        
-//         -/ossssssssss+:.     `-/ossssssssso/.          `:+ssssssss+:`      `-+ossssssso+-          
-//            `..---..`              `.---..`                 ..--..              `.---.`             
+//       ..----.`                 `.----.`             .----.`            
+//   ./ossssssssso/.           ./osssssssso/.       -+sssooosso/-         
+//  /so/-.`   `.:oss:        .+ss/-`    `-/os-    `+ss/.`   `./ss+`       
+//   .           .sss       .sso.           `     +ss-         .sso`      
+//               `sss`     `oso`                 .ss+           +ss/      
+//               /ss:      :ss:    `...`         .sso           +sss`     
+//       ....--/os+.       +ss. -/ossssss+-`      +ss/         :soss.     
+//      -ssssssss+-`       oss-+o/.````-/sso-     `/sso:.```.:oo-+ss.     
+//           ``.:+ss/      osso+`        .oss.      ./ossssso+:` oss`     
+//                /ss/     /sss.          -ss/          ````    `sso      
+//                .sso     .sss.          -ss/                  /ss-      
+//  ``            /ss/      :ss+         `oss.    ``          `/ss/       
+// `sso/-.`   `.-+ss+`       :oso:.   `.:oso-     oso:.`   `./oso-        
+//  `-/ossssssssso/.          `:+ssssssss+:`      `-+ossssssso+-          
+//       `.---..`                 ..--..              `.---.`             
 
-
-//    Website:      https://circumstancer.com                                                                                                    
-//    Instagram:    https://www.instagram.com/circumstancer_
-//    Twitter:      https://twitter.com/Circumstancer_
-//    Discord:      https://discord.gg/f4nfyWcT
-
-pragma solidity ^0.8.0;
+pragma solidity >=0.7.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import '@openzeppelin/contracts/access/Ownable.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Circumstancer is ERC721, ERC721Enumerable, Ownable {
-
-    using Counters for Counters.Counter;
     using Strings for uint256;
 
-    Counters.Counter private _idCounter;
-
-    address private mainAddress;
-    string  private _baseURIextended;
+    string  private baseURIextended;
     uint256 public  RESERVED        = 100;
-    uint256 private MAX_MINT        = 15;
-    uint256 public  PRICE           = 0.21 ether;
-    bool    public  STATUS_SALE     = false;
-    uint256 public  MAX_SUPPLY      = 9999;
-    string  public  PROVENANCE;
+    uint256 private MAX_MINT        = 6;
+    uint256 private MAX_MINT_WL     = 3;
+    uint256 public  PRICE           = 0.48 ether;
+    uint256 public  PRICE_WL        = 0.21 ether;
+    uint256 public  MAX_SUPPLY      = 6000;
+    uint256 public  MAX_SUPPLY_WL   = 1800;
+    uint256 public  WL_SPOTS        = 1500;
+    bool    public  STATUS_PUBLIC   = false;
+    bool    public  STATUS_WL       = false;
+    bool    public  ENABLED_ADD_WL  = false;
+    address private mainAddress;
+    mapping(address => uint256) public whitelisted;
 
-    constructor(address mAddress, string memory _baseURI) ERC721 ("CircumstancerTest", "C369") {
-        mainAddress = mAddress;
-        _baseURIextended = _baseURI;
+    constructor(string memory _baseURI) ERC721 ("Circumstancer", "C369") {
+        mainAddress = msg.sender;
+        baseURIextended = _baseURI;
+    }
+
+    modifier callerIsUser() {
+        require(tx.origin == msg.sender, "The caller is another contract");
+        _;
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal override(ERC721, ERC721Enumerable) {
@@ -59,62 +60,81 @@ contract Circumstancer is ERC721, ERC721Enumerable, Ownable {
         return super.supportsInterface(interfaceId);
     }
 
-    function setBaseURI(string memory baseURI_) external onlyOwner {
-        _baseURIextended = baseURI_;
+    function setBaseURI(string memory newBaseURI) external onlyOwner {
+        baseURIextended = newBaseURI;
     }
 
     function baseURI() public view returns (string memory) {
-        return _baseURIextended;
-    }
-
-    function setProvenance(string memory provenance) public onlyOwner {
-        PROVENANCE = provenance;
+        return baseURIextended;
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
-
-        string memory _tokenURI = tokenId.toString();
         string memory base = baseURI();
-        
-        // If there is no base URI, return the token URI.
-        if (bytes(base).length == 0) {
-            return _tokenURI;
-        }
-        // If both are set, concatenate the baseURI and tokenURI (via abi.encodePacked).
+        string memory _tokenURI = tokenId.toString();
+
         if (bytes(_tokenURI).length > 0) {
             return string(abi.encodePacked(base, _tokenURI));
         }
-        // If there is a baseURI but no tokenURI, concatenate the tokenID to the baseURI.
         return string(abi.encodePacked(base, tokenId.toString()));
     }
 
-    function setStatusSale(bool newState) public onlyOwner {
-        STATUS_SALE = newState;
+    function setStatusWLSale(bool newState) public onlyOwner {
+        STATUS_WL = newState;
     }
 
-    // Just in case Eth does some crazy stuff
+    function setStatusSale(bool newState) public onlyOwner {
+        STATUS_PUBLIC = newState;
+    }
+
     function setPrice(uint256 _newPrice) public onlyOwner {
         PRICE = _newPrice;
     }
 
-    // Just in case Eth does some crazy stuff
+    function changeStatusAddWL(bool status) public onlyOwner {
+        ENABLED_ADD_WL = status;
+    }
+
     function setAddress(address _mAddress) public onlyOwner {
         mainAddress = _mAddress;
     }
 
-    // function getPrice() public view returns (uint256){
-    //     return PRICE;
-    // }
+    function addMeToWhitelist() public callerIsUser {
+        require(ENABLED_ADD_WL, "Aggregation to the Whitelist has not been enabled");
+        require(WL_SPOTS > 0, "The Whitelist is full");
+        require(whitelisted[msg.sender] == 0, "You are already part of the Whitelist");
+        WL_SPOTS--;
+        whitelisted[msg.sender] = MAX_MINT_WL;
+    }
 
-    // function getReserved() public view returns (uint256){
-    //     return RESERVED;
-    // }
-    
-    function mint(uint numberOfTokens) public payable {
+    function mintWL(uint numberOfTokens) public payable callerIsUser {
         uint256 supply = totalSupply();
-        require(STATUS_SALE, "Sale must be active to mint tokens");
+        uint256 quantityAvailable = whitelisted[msg.sender];
+        
+        require(STATUS_WL, "WL must be active to mint tokens");
+        require(numberOfTokens <= MAX_MINT_WL, "Exceeded max token purchase in the WL");
+        require(quantityAvailable > 0, "You are not allowed to shop at the WL");
+        require(numberOfTokens <= quantityAvailable, "You exceed the maximum amount per wallet");
+        require(numberOfTokens <= MAX_SUPPLY_WL, "Purchase would exceed max tokens in the WL");
+        require(PRICE_WL * numberOfTokens <= msg.value, "Ether value sent is not correct");
+
+        MAX_SUPPLY_WL -= numberOfTokens;
+        whitelisted[msg.sender] -= numberOfTokens;
+        for (uint256 i = 1; i <= numberOfTokens; i++) {
+            _safeMint(msg.sender, supply + i);
+        }
+        if ( MAX_SUPPLY_WL == 0 ) {
+            STATUS_WL = false;
+        }
+    }
+    
+    function mint(uint numberOfTokens) public payable callerIsUser {
+        uint256 supply = totalSupply();
+        uint256 ownerSupply = balanceOf(msg.sender);
+
+        require(STATUS_PUBLIC, "Sale must be active to mint tokens");
         require(numberOfTokens <= MAX_MINT, "Exceeded max token purchase");
+        require(ownerSupply + numberOfTokens <= MAX_MINT, "You exceed the maximum amount per wallet");
         require(supply + numberOfTokens <= MAX_SUPPLY - RESERVED, "Purchase would exceed max tokens");
         require(PRICE * numberOfTokens <= msg.value, "Ether value sent is not correct");
 
@@ -125,13 +145,11 @@ contract Circumstancer is ERC721, ERC721Enumerable, Ownable {
 
     function giveAway(address _to, uint256 _amount) external onlyOwner {
         require( _amount <= RESERVED, "Exceeds Reserved Circumstancer Supply" );
-
+        RESERVED -= _amount;
         uint256 supply = totalSupply();
-        for(uint256 i; i < _amount; i++){
+        for (uint256 i = 1; i <= _amount; i++){
             _safeMint( _to, supply + i );
         }
-
-        RESERVED -= _amount;
     }
 
     function withdraw() public onlyOwner {
