@@ -1,18 +1,20 @@
-const { ethers } = require("hardhat");
+const { ethers } = require('hardhat')
 
 const deploy = async () => {
-    const [deployer] = await ethers.getSigners();
-    const baseURI = 'ipfs://QmdPoPzj1kZfVT2hQj8G2NNPKDsWpUZvefAfazGcnBfd4Y/';
+    const [deployer] = await ethers.getSigners()
+    const baseURI = 'https://color-sale.s3.amazonaws.com/'
 
-    console.log("Deploying contract with the account: ", deployer.address);
+    console.log('Deploying contract with the account: ', deployer.address)
 
-    const Circumstancer = await ethers.getContractFactory("Circumstancer")
-    const deployed = await Circumstancer.deploy(baseURI);
+    const ColorSale = await ethers.getContractFactory('ColorSale')
+    const deployed = await ColorSale.deploy(baseURI)
 
-    console.log("Circumstancer is deployed at: ", deployed.address);
+    console.log('ColorSale is deployed at: ', deployed.address)
 }
 
-deploy().then(() => process.exit(0)).catch(error => {
-    console.log(error);
-    process.exit(1);
-})
+deploy()
+    .then(() => process.exit(0))
+    .catch((error) => {
+        console.log(error)
+        process.exit(1)
+    })
